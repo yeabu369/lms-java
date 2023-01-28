@@ -3,6 +3,9 @@ package librarysystem.admin;
 import business.Address;
 import business.Author;
 import librarysystem.Util;
+import librarysystem.ruleSets.RuleException;
+import librarysystem.ruleSets.RuleSet;
+import librarysystem.ruleSets.RuleSetFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -106,20 +109,47 @@ public class AddAuthorPanel extends JFrame {
 
     private void addAuthorActionListener(JButton button) {
         button.addActionListener(evt -> {
-            String firstName = firstNameField.getText();
-            String lastName = lastNameField.getText();
-            String telephone = telephoneField.getText();
-            String street = streetField.getText();
-            String state = stateField.getText();
-            String city = cityField.getText();
-            String zip = zipField.getText();
-            String bio = bioField.getText();
-            if (Util.isEmpty(firstName) || Util.isEmpty(lastName) || Util.isEmpty(telephone) || Util.isEmpty(street) || Util.isEmpty(state) || Util.isEmpty(city) || Util.isEmpty(zip) || Util.isEmpty(bio)) {
-                Util.showDialog(this, "Please fill missing fields");
-                return;
+            try {
+                RuleSet rules = RuleSetFactory.getRuleSet(this);
+                rules.applyRules(this);
+                addBookPanel.updateAuthors(new Author(getFirstName(), getLastName(), getTelPhone(),
+                        new Address(getStreet(), getCity(), getStateValue(), getZip()), getBio()));
+                dispose();
+            } catch (RuleException e) {
+                Util.showDialog(this, e.getMessage());
             }
-            addBookPanel.updateAuthors(new Author(firstName, lastName, telephone, new Address(street, city, state, zip), bio));
-            dispose();
         });
+    }
+
+    public String getFirstName() {
+        return firstNameField.getText();
+    }
+
+    public String getLastName() {
+        return lastNameField.getText();
+    }
+
+    public String getStreet() {
+        return stateField.getText();
+    }
+
+    public String getCity() {
+        return cityField.getText();
+    }
+
+    public String getStateValue() {
+        return stateField.getText();
+    }
+
+    public String getZip() {
+        return zipField.getText();
+    }
+
+    public String getTelPhone() {
+        return telephoneField.getText();
+    }
+
+    public String getBio() {
+        return bioField.getText();
     }
 }

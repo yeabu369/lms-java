@@ -5,6 +5,9 @@ import business.Book;
 import business.SystemController;
 import librarysystem.LibWindow;
 import librarysystem.Util;
+import librarysystem.ruleSets.RuleException;
+import librarysystem.ruleSets.RuleSet;
+import librarysystem.ruleSets.RuleSetFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +19,7 @@ public class AddBookPanel extends JPanel {
 
     List<Author> authors = new ArrayList<>();
 
-    SystemController sc = SystemController.getInstance();
+    SystemController controller = SystemController.getInstance();
     JPanel topPanel = new JPanel();
 
     JLabel addBook = new JLabel("Add Book");
@@ -123,40 +126,48 @@ public class AddBookPanel extends JPanel {
 
     private void saveNewBookButtonListener(JButton button) {
         button.addActionListener(evt -> {
-            String isbn = isbnField.getText();
-            String title = titleField.getText();
-            String checkOutLength = checkOutLengthField.getText();
-            String copies = copiesField.getText();
-            if (Util.isEmpty(isbn) || Util.isEmpty(title) || Util.isEmpty(checkOutLength) || Util.isEmpty(copies) || authors.size() == 0) {
-                Util.showDialog(this, "Please fill missing fields");
-                return;
+            try {
+                RuleSet rules = RuleSetFactory.getRuleSet(this);
+                rules.applyRules(this);
+                Book book = controller.getBook(getIsbn());
+                if (book == null)
+                    saveNewBook(new Book(getIsbn(), getTitle(), Integer.parseInt(getCheckOutLength()), authors), Integer.parseInt(getCopies()));
+                else Util.showDialog(this, "Book with ISBN:" + getIsbn() + " already exists!");
+            } catch (RuleException e) {
+                Util.showDialog(this, e.getMessage());
             }
-            if (!Util.isNumeric(checkOutLength) || !Util.isNumeric(copies)) {
-                Util.showDialog(this, "Checkout Length / Number of copies must be digits");
-                return;
-            }
-            int checkOut = Integer.parseInt(checkOutLength);
-            if (checkOut != 7 && checkOut != 21) {
-                Util.showDialog(this, "CheckOut length is 7 or 21");
-                return;
-            }
-            if (Integer.parseInt(copies) < 1) {
-                Util.showDialog(this, "Book should have at least one copy!");
-                return;
-            }
-
-            Book book = sc.getBook(isbn);
-            if (book == null)
-                saveNewBook(new Book(isbn, title, Integer.parseInt(checkOutLength), authors), Integer.parseInt(copies));
-            else Util.showDialog(this, "Book with ISBN:" + isbn + " already exists!");
         });
+    }
+
+    public String getIsbn() {
+        return isbnField.getText();
+    }
+
+    public String getTitle() {
+        return titleField.getText();
+    }
+
+    public String getCopies() {
+        return copiesField.getText();
+    }
+
+    public String getCheckOutLength() {
+        return checkOutLengthField.getText();
+    }
+
+    public String getNumberOfAuthors() {
+        return authorsField.getText();
+    }
+
+    public int getAuthorsSize() {
+        return authors.size();
     }
 
     private void saveNewBook(Book book, int copies) {
         for (int i = 0; i < copies - 1; i++) {
             book.addCopy();
         }
-        sc.saveBook(book);
+        controller.saveBook(book);
         Util.showDialog(this, "Book: '" + book.getTitle() + "' is successfully added!");
     }
 }

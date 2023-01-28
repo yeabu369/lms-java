@@ -3,6 +3,9 @@ package librarysystem.admin;
 import business.SystemController;
 import librarysystem.LibWindow;
 import librarysystem.Util;
+import librarysystem.ruleSets.RuleException;
+import librarysystem.ruleSets.RuleSet;
+import librarysystem.ruleSets.RuleSetFactory;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -11,9 +14,11 @@ import java.awt.event.ActionListener;
 public class AddMemberPanel extends JPanel implements ActionListener {
 
     private LibWindow parentFrame;
-    SystemController sc = SystemController.getInstance();
+    SystemController controller = SystemController.getInstance();
 
     // define labels first name, last name, street, city, zip, state, telephone number
+
+//    JLabel memberIdLabel = new JLabel("Member ID");
     JLabel firstNameLabel = new JLabel("First Name");
     JLabel lastNameLabel = new JLabel("Last Name");
     JLabel streetLabel = new JLabel("Street");
@@ -95,27 +100,50 @@ public class AddMemberPanel extends JPanel implements ActionListener {
         this.addMemberBtn.addActionListener(this);
     }
 
+
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        String firstName = firstNameTextField.getText();
-        String lastName = lastNameTextField.getText();
-        String street = streetTextField.getText();
-        String city = cityTextField.getText();
-        String zip = zipTextField.getText();
-        String state = stateTextField.getText();
-        String telephone = telNumberTextField.getText();
-
-        // simple validation
-        if (firstName.equals("") || lastName.equals("") || street.equals("") || city.equals("") || zip.equals("") || state.equals("") || telephone.equals("")) {
-            showDialog("Please fill missing fields");
-        } else {
-            sc.addNewMember(firstName, lastName, street, city, zip, state, telephone);
-            System.out.println(sc.getAllLibraryMembers());
+        try {
+            RuleSet rules = RuleSetFactory.getRuleSet(this);
+            rules.applyRules(this);
+            controller.addNewMember(getFirstName(), getLastName(), getStreet(), getCity(), getZip(), getStateValue(), getTelPhone());
+            System.out.println(controller.getAllLibraryMembers());
             showDialog("Member successfully added");
+        } catch (RuleException exception) {
+            showDialog(exception.getMessage());
         }
     }
 
     private void showDialog(String message) {
         Util.showDialog(this, message);
+    }
+
+    public String getFirstName() {
+        return firstNameTextField.getText();
+    }
+
+    public String getLastName() {
+        return lastNameTextField.getText();
+    }
+
+    public String getStreet() {
+        return streetTextField.getText();
+    }
+
+    public String getCity() {
+        return cityTextField.getText();
+    }
+
+    public String getStateValue() {
+        return stateTextField.getText();
+    }
+
+    public String getZip() {
+        return zipTextField.getText();
+    }
+
+    public String getTelPhone() {
+        return telNumberTextField.getText();
     }
 }
